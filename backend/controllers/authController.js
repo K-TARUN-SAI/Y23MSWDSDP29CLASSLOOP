@@ -62,17 +62,23 @@ exports.login = async (req, res, next) => {
   const { email, password } = req.body;
 
   try {
+    console.log('Login attempt for email:', email); // Debug log
+
     // Check if user exists
     const user = await User.findOne({ email }).select('+password');
     if (!user) {
+      console.log('User not found for email:', email); // Debug log
       return next(new ErrorResponse('Invalid credentials', 401));
     }
 
     // Check if password matches
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
+      console.log('Password mismatch for email:', email); // Debug log
       return next(new ErrorResponse('Invalid credentials', 401));
     }
+
+    console.log('User found and password matched:', user); // Debug log
 
     // Generate tokens
     const token = generateToken(user._id);
@@ -80,6 +86,7 @@ exports.login = async (req, res, next) => {
     
     // Save refresh token
     await Token.create({ userId: user._id, token: refreshToken });
+    console.log('Refresh token saved for user:', user._id); // Debug log
 
     // Set cookies
     res.cookie('refreshToken', refreshToken, {
@@ -87,6 +94,7 @@ exports.login = async (req, res, next) => {
       secure: process.env.NODE_ENV === 'production',
       maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
     });
+    console.log('Refresh token cookie set'); // Debug log
 
     res.status(200).json({
       success: true,
@@ -99,7 +107,9 @@ exports.login = async (req, res, next) => {
         avatar: user.avatar
       }
     });
+    console.log('Login response sent for user:', user._id); // Debug log
   } catch (error) {
+    console.error('Login error:', error); // Debug log
     next(error);
   }
 };
